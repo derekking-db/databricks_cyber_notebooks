@@ -6,18 +6,17 @@
 # MAGIC |--------|-------------|
 # MAGIC |**Created By** | Derek King (cybersecurity@databricks.com)|
 # MAGIC |**Input Source**|Winlogbeats<ul><li>WinEventLog:Application</li><li>WinEventLog:System</li><li>WinEventLog:Security</li><li>Microsoft-Windows-WMI-Activity/Operational</li><li>Microsoft-Windows-Sysmon/Operational</li><li>Windows Powershell</li></ul>|
-# MAGIC |**Ingest Method**|Kafka|
-# MAGIC |**Extracts**| Microsoft Sysmon Events|
+# MAGIC |**Ingest Connector**|Kafka|
+# MAGIC |**Extracts**| Only the Microsoft Sysmon Events|
 # MAGIC |**Sample Records Link**|<a><href="www.sample.com">Github Link</a>|
 # MAGIC 
 # MAGIC ## History
-# MAGIC | Date | Developed By | Reason |
-# MAGIC |------|--------------|--------|
-# MAGIC |30-Jan-2022|Derek King|Sample extraction of Windows Event Logs|
+# MAGIC | Date | Version | Developed By | Reason |
+# MAGIC |------|---------|--------------|--------|
+# MAGIC |30-Jan-2022|v0.1 - DRAFT| Derek King|Sample extraction of Windows Event Logs|
 # MAGIC 
 # MAGIC ## Other Information
-# MAGIC Lots of work to do
-# MAGIC   
+# MAGIC 
 # MAGIC |Table 1|Table 2|
 # MAGIC |--|--|
 # MAGIC |<table><tr><th>Table 1 Heading 1</th><th>Table 1 Heading 2</th></tr><tr><td>Row 1 Column 1</td><td>Row 1 Column 2</td></tr> </table>| <table> <tr><th>Table 2 Heading 1</th><th>Table 2 Heading 2</th></tr><tr><td>Row 1 Column 1</td><td>Row 1 Column 2</td></tr> </table>|
@@ -437,7 +436,7 @@ display(bronzeWinlogbeatDF)
 # MAGIC |Service|4|sysmonService|TBC|
 # MAGIC |File|11,23|sysmonFile|TBC|
 # MAGIC |Network|3|sysmonNetwork|TBC|
-# MAGIC |WMI|19.20,21|sysmonWMI|TBC|
+# MAGIC |WMI|19,20,21|sysmonWMI|TBC|
 # MAGIC 
 # MAGIC 
 # MAGIC **TODO: Other Sources received via the topic**
