@@ -24,7 +24,7 @@
 
 optimizeInline = False  # Used for example purposes - Probably want to schedule hours jobs for optimization tasks
 streamMode = 'batch' # batch OR streaming
-bootstrapServerAddr = "10.0.233.235"
+bootstrapServerAddr = "10.0.253.218"
 
 # COMMAND ----------
 
@@ -165,12 +165,10 @@ def parser_kafka_winlogbeat(df: DataFrame, stage: str=None) -> DataFrame:
         df = df.select(col("winlog.channel").alias("_sourcetype"), col("`@timestamp`").alias("_event_time"), col("`@timestamp`").cast("date").alias("_event_date"), col("agent.hostname").alias("dvc_hostname"), "*")
         return df
     else:
-        #df3 = df2.selectExpr("map_from_entries(transform(array_remove(message, ''), x -> struct(regexp_extract(x, '^([^:]*): .*$', 1), regexp_extract(x, '^([^:]*): *(.*)$', 2)))) as m", "*")
         # Parser behaviours
         _df2 = df.select("*", split(df.message, "\n").alias("message_split")).drop("message").withColumnRenamed("message_split", "message")
         # Flatten entire DataFrame maintaining parent col name
-        _df3 = flatten_df(_df2)
-        return _df3
+        return(flatten_df(_df2))
 
 def cim_cols(df: DataFrame, columns: list, action: str) -> DataFrame:
     df = df
@@ -268,7 +266,7 @@ def optimize_table(tableName:str, columns: list):
 # MAGIC 
 # MAGIC     #----------------------------- Kafka output --------------------------------
 # MAGIC     output.kafka:
-# MAGIC       hosts: ["34.214.125.74:9092", "34.220.122.121:9093", "34.215.129.45:9094"]
+# MAGIC       hosts: [34.215.129.45:9094"]
 # MAGIC       topic: "winlogbeat"
 # MAGIC       partition.random:
 # MAGIC         reachable_only: false
@@ -278,155 +276,16 @@ def optimize_table(tableName:str, columns: list):
 
 # COMMAND ----------
 
-# MAGIC %md 
-# MAGIC ** Kafka server.properties config file **
+# MAGIC %md
+# MAGIC #### Kafka Server Creation
+# MAGIC If you do not have a kafka server, you can spin one up on using <a href="https://github.com/DerekKing001/kafka-in-docker" target="_blank">this repository</a>.
 # MAGIC 
-# MAGIC     # Licensed to the Apache Software Foundation (ASF) under one or more
-# MAGIC     # contributor license agreements.  See the NOTICE file distributed with
-# MAGIC     # this work for additional information regarding copyright ownership.
-# MAGIC     # The ASF licenses this file to You under the Apache License, Version 2.0
-# MAGIC     # (the "License"); you may not use this file except in compliance with
-# MAGIC     # the License.  You may obtain a copy of the License at
-# MAGIC     #
-# MAGIC     #    http://www.apache.org/licenses/LICENSE-2.0
-# MAGIC     #
-# MAGIC     # Unless required by applicable law or agreed to in writing, software
-# MAGIC     # distributed under the License is distributed on an "AS IS" BASIS,
-# MAGIC     # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# MAGIC     # See the License for the specific language governing permissions and
-# MAGIC     # limitations under the License.
+# MAGIC **Notes**
 # MAGIC 
-# MAGIC     # see kafka.server.KafkaConfig for additional details and defaults
-# MAGIC 
-# MAGIC     ############################# Server Basics #############################
-# MAGIC 
-# MAGIC     # The id of the broker. This must be set to a unique integer for each broker.
-# MAGIC     broker.id=0
-# MAGIC 
-# MAGIC     ############################# Socket Server Settings #############################
-# MAGIC 
-# MAGIC     # The address the socket server listens on. It will get the value returned from
-# MAGIC     # java.net.InetAddress.getCanonicalHostName() if not configured.
-# MAGIC     #   FORMAT:
-# MAGIC     #     listeners = listener_name://host_name:port
-# MAGIC     #   EXAMPLE:
-# MAGIC     #     listeners = PLAINTEXT://your.host.name:9092
-# MAGIC 
-# MAGIC     #listeners=INSIDE://:9092,OUTSIDE://:9093
-# MAGIC     #inter.broker.listener.name=INSIDE
-# MAGIC     listeners=PLAINTEXT://kafka-1:9092
-# MAGIC 
-# MAGIC     # Hostname and port the broker will advertise to producers and consumers. If not set,
-# MAGIC     # it uses the value for "listeners" if configured.  Otherwise, it will use the value
-# MAGIC     # returned from java.net.InetAddress.getCanonicalHostName().
-# MAGIC 
-# MAGIC     #advertised.listeners=OUTSIDE://BROKERIP:9093,INSIDE://:9092
-# MAGIC     #advertised.listeners=PLAINTEXT://BROKERIP:9092
-# MAGIC 
-# MAGIC     # Maps listener names to security protocols, the default is for them to be the same. See the config documentation for more details
-# MAGIC     # listener.security.protocol.map=PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL
-# MAGIC     #listener.security.protocol.map=INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-# MAGIC 
-# MAGIC     # The number of threads that the server uses for receiving requests from the network and sending responses to the network
-# MAGIC     num.network.threads=3
-# MAGIC 
-# MAGIC     # The number of threads that the server uses for processing requests, which may include disk I/O
-# MAGIC     num.io.threads=8
-# MAGIC 
-# MAGIC     # The send buffer (SO_SNDBUF) used by the socket server
-# MAGIC     socket.send.buffer.bytes=102400
-# MAGIC 
-# MAGIC     # The receive buffer (SO_RCVBUF) used by the socket server
-# MAGIC     socket.receive.buffer.bytes=102400
-# MAGIC 
-# MAGIC     # The maximum size of a request that the socket server will accept (protection against OOM)
-# MAGIC     #socket.request.max.bytes=104857600
-# MAGIC     socket.request.max.bytes=2000000000
-# MAGIC 
-# MAGIC     ############################# Log Basics #############################
-# MAGIC 
-# MAGIC     # A comma seperated list of directories under which to store log files
-# MAGIC     log.dirs=/tmp/kafka-logs
-# MAGIC 
-# MAGIC     # The default number of log partitions per topic. More partitions allow greater
-# MAGIC     # parallelism for consumption, but this will also result in more files across
-# MAGIC     # the brokers.
-# MAGIC     num.partitions=2
-# MAGIC 
-# MAGIC     # The number of threads per data directory to be used for log recovery at startup and flushing at shutdown.
-# MAGIC     # This value is recommended to be increased for installations with data dirs located in RAID array.
-# MAGIC     num.recovery.threads.per.data.dir=1
-# MAGIC 
-# MAGIC     ############################# Internal Topic Settings  #############################
-# MAGIC     # The replication factor for the group metadata internal topics "__consumer_offsets" and "__transaction_state"
-# MAGIC     # For anything other than development testing, a value greater than 1 is recommended for to ensure availability such as 3.
-# MAGIC     offsets.topic.replication.factor=1
-# MAGIC     transaction.state.log.replication.factor=1
-# MAGIC     transaction.state.log.min.isr=1
-# MAGIC 
-# MAGIC     ############################# Log Flush Policy #############################
-# MAGIC 
-# MAGIC     # Messages are immediately written to the filesystem but by default we only fsync() to sync
-# MAGIC     # the OS cache lazily. The following configurations control the flush of data to disk.
-# MAGIC     # There are a few important trade-offs here:
-# MAGIC     #    1. Durability: Unflushed data may be lost if you are not using replication.
-# MAGIC     #    2. Latency: Very large flush intervals may lead to latency spikes when the flush does occur as there will be a lot of data to flush.
-# MAGIC     #    3. Throughput: The flush is generally the most expensive operation, and a small flush interval may lead to exceessive seeks.
-# MAGIC     # The settings below allow one to configure the flush policy to flush data after a period of time or
-# MAGIC     # every N messages (or both). This can be done globally and overridden on a per-topic basis.
-# MAGIC 
-# MAGIC     # The number of messages to accept before forcing a flush of data to disk
-# MAGIC     #log.flush.interval.messages=10000
-# MAGIC 
-# MAGIC     # The maximum amount of time a message can sit in a log before we force a flush
-# MAGIC     #log.flush.interval.ms=1000
-# MAGIC 
-# MAGIC     ############################# Log Retention Policy #############################
-# MAGIC 
-# MAGIC     # The following configurations control the disposal of log segments. The policy can
-# MAGIC     # be set to delete segments after a period of time, or after a given size has accumulated.
-# MAGIC     # A segment will be deleted whenever *either* of these criteria are met. Deletion always happens
-# MAGIC     # from the end of the log.
-# MAGIC 
-# MAGIC     # The minimum age of a log file to be eligible for deletion due to age
-# MAGIC     log.retention.hours=96
-# MAGIC 
-# MAGIC     # A size-based retention policy for logs. Segments are pruned from the log unless the remaining
-# MAGIC     # segments drop below log.retention.bytes. Functions independently of log.retention.hours.
-# MAGIC     #log.retention.bytes=1073741824
-# MAGIC 
-# MAGIC     # The maximum size of a log segment file. When this size is reached a new log segment will be created.
-# MAGIC     log.segment.bytes=1073741824
-# MAGIC 
-# MAGIC     # The interval at which log segments are checked to see if they can be deleted according
-# MAGIC     # to the retention policies
-# MAGIC     log.retention.check.interval.ms=300000
-# MAGIC 
-# MAGIC     ############################# Zookeeper #############################
-# MAGIC 
-# MAGIC     # Zookeeper connection string (see zookeeper docs for details).
-# MAGIC     # This is a comma separated host:port pairs, each corresponding to a zk
-# MAGIC     # server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
-# MAGIC     # You can also append an optional chroot string to the urls to specify the
-# MAGIC     # root directory for all kafka znodes.
-# MAGIC     zookeeper.connect=zookeeper-1:2181
-# MAGIC 
-# MAGIC     # Timeout in ms for connecting to zookeeper
-# MAGIC     zookeeper.connection.timeout.ms=6000
-# MAGIC 
-# MAGIC     ############################# Group Coordinator Settings #############################
-# MAGIC 
-# MAGIC     # The following configuration specifies the time, in milliseconds, that the GroupCoordinator will delay the initial consumer rebalance.
-# MAGIC     # The rebalance will be further delayed by the value of group.initial.rebalance.delay.ms as new members join the group, up to a maximum of max.poll.interval.ms.
-# MAGIC     # The default value for this is 3 seconds.
-# MAGIC     # We override this to 0 here as it makes for a better out-of-the-box experience for development and testing.
-# MAGIC     # However, in production environments the default value of 3 seconds is more suitable as this will help to avoid unnecessary, and potentially expensive, rebalances during application startup.
-# MAGIC     group.initial.rebalance.delay.ms=2000
-# MAGIC 
-# MAGIC     auto.create.topics.enable=false
-# MAGIC     unclean.leader.election.enable=true
-# MAGIC     num.recovery.threads.per.data.dir=1
-# MAGIC     num.replica.fetchers=2
+# MAGIC * This should be used ONLY for testing purposes. It is configured to run well in AWS (uses metadata service for hostname configuration etc), but can be adapted to your environment.
+# MAGIC * It will create the winlogbeat topic and listen externally on port 9094 for incoming messages. 
+# MAGIC * Remember to configure your security groups if you bring this up in the cloud.
+# MAGIC * This notebook should have access to the internal IP to retrieve messages. 
 
 # COMMAND ----------
 
@@ -439,7 +298,7 @@ def optimize_table(tableName:str, columns: list):
 
 # COMMAND ----------
 
-winlogbeatDF, winlogbeatSchema = read_kafka_topic(bootstrapServers=bootstrapServerAddr, port="9092", topic="winlogbeat")
+winlogbeatDF, winlogbeatSchema = read_kafka_topic(bootstrapServers=bootstrapServerAddr, port="9094", topic="winlogbeat")
 if type(winlogbeatDF) == DataFrame:
     winlogbeatDF = add_ingest_meta(winlogbeatDF)
     winlogbeatDF = parser_kafka_winlogbeat(winlogbeatDF, stage='raw')
@@ -497,12 +356,14 @@ display(bronzeWinlogbeatDF)
 # COMMAND ----------
 
 sysmonProcessDF = bronzeWinlogbeatDF.filter((bronzeWinlogbeatDF._sourcetype == 'Microsoft-Windows-Sysmon/Operational') 
-                                          & ( (col("winlog:event_id") == '1') | (col("winlog:event_id") == '5') | (col("winlog:event_id") == '18') ))
+                  & ( (col("winlog:event_id") == '1') 
+                  | (col("winlog:event_id") == '5') 
+                  | (col("winlog:event_id") == '18') ))
 
 # COMMAND ----------
 
 transform_cols = [
-    {"new":["event_message","EXPR=case when (event_id = 1) then 'Process Started' when (event_id = 5) then 'Process Terminated' end"]},
+    {"new":["event_message","EXPR=case when (event_id = 1) then 'Process Started' when (event_id = 5) then 'Process Terminated' when (event_id = 18) then 'Pipe Connected' end"]},
     {"new":["event_message_result","LITERAL=success"]},
     {"new":["event_schema_version","LITERAL=1.0"]},
     {"new":["event_schema_file","LITERAL=winlogbeat-sysmon"]},
