@@ -22,6 +22,15 @@
 
 # COMMAND ----------
 
+# Set to False if you are NOT running the community edition
+community_edition = False
+if community_edition == True:
+    default_dbfs_path = '/databricks/driver/data'
+else:
+    default_dbfs_path = 'dbfs:/FileStore/x509/datasets'
+
+# COMMAND ----------
+
 optimizeInline = False  # Used for example purposes - Probably want to schedule hours jobs for optimization tasks
 streamMode = 'batch' # batch OR streaming
 bootstrapServerAddr = "10.0.253.218"
